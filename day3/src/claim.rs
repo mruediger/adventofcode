@@ -1,26 +1,30 @@
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Claim {
-        id: u32,
-        x: u32,
-        y: u32,
-        w: u32,
-        h: u32
-    }
+    id: u32,
+    x: u32,
+    y: u32,
+    w: u32,
+    h: u32,
+}
 
 impl Claim {
     pub fn from_line(line: String) -> Claim {
-        // #1 @ 509,796: 18x15
-
         let elements: Vec<&str> = line.split(' ').collect();
 
-        let id = elements.get(0).unwrap()
+        let id = elements
+            .get(0)
+            .unwrap()
             .trim_left_matches('#')
-            .parse().unwrap();
+            .parse()
+            .unwrap();
 
-        let cordinates: Vec<u32> = elements.get(2).unwrap()
+        let cordinates: Vec<u32> = elements
+            .get(2)
+            .unwrap()
             .trim_right_matches(':')
-            .split(',').map(|s| s.parse().unwrap()).collect();
+            .split(',')
+            .map(|s| s.parse().unwrap())
+            .collect();
 
         let size: Vec<u32> = elements.get(3).unwrap()
             .split('x').map(|s| s.parse().unwrap()).collect();
@@ -30,7 +34,7 @@ impl Claim {
             x: *cordinates.get(0).unwrap(),
             y: *cordinates.get(1).unwrap(),
             w: *size.get(0).unwrap(),
-            h: *size.get(0).unwrap()
+            h: *size.get(0).unwrap(),
         }
     }
 
@@ -39,7 +43,8 @@ impl Claim {
     }
 
     pub fn intersections(&self, claims: &Vec<Claim>) -> Vec<Option<Claim>> {
-        claims.iter()
+        claims
+            .iter()
             .filter(|claim| claim.id != self.id)
             .map(|claim| self.intersection(claim))
             .collect()
