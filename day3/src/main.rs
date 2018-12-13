@@ -1,6 +1,6 @@
-use std::io::BufReader;
-use std::io::BufRead;
 use std::fs::File;
+use std::io::BufRead;
+use std::io::BufReader;
 
 mod claim;
 
@@ -8,7 +8,7 @@ fn intersections(claim: &claim::Claim, claims: &Vec<claim::Claim>) -> Vec<claim:
     Vec::new()
 }
 
-fn main() -> std::io::Result<()>{
+fn main() -> std::io::Result<()> {
     let f = File::open("../input.txt")?;
     let reader = BufReader::new(f);
 
@@ -18,10 +18,10 @@ fn main() -> std::io::Result<()>{
         .map(claim::Claim::from_line)
         .collect();
 
-    let intersections = claims.iter()
+    let intersections = claims
+        .iter()
         .flat_map(|c| c.intersections(&claims))
         .flatten();
-
 
     intersections.for_each(|i| println!("{:?}", i));
 
