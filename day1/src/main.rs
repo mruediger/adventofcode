@@ -10,10 +10,8 @@ fn main() {
     let file = File::open(INPUT).expect("file not found");
     let reader = BufReader::new(&file);
 
-    let inputs: Vec<i32> = reader.lines()
-        .filter(|l| l.is_ok()).map(|l| l.unwrap())
-        .map(|s| s.parse::<i32>())
-        .filter(|i| i.is_ok()).map(|i| i.unwrap())
+    let inputs: Vec<i32> = reader.lines().flatten()
+        .map(|s| s.parse::<i32>()).flatten()
         .collect();
 
     let mut previous = 0;
