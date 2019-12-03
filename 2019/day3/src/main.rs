@@ -15,6 +15,7 @@ struct Point {
 struct Line {
     a: Point,
     b: Point,
+    steps: i32,
 }
 
 impl Line {
@@ -32,11 +33,13 @@ impl Line {
                 Line {
                     a: self.a,
                     b: self.b,
+                    steps: self.steps,
                 }
             } else {
                 Line {
                     a: self.b,
                     b: self.a,
+                    steps: self.steps,
                 }
             }
         } else {
@@ -44,11 +47,13 @@ impl Line {
                 Line {
                     a: self.a,
                     b: self.b,
+                    steps: self.steps,
                 }
             } else {
                 Line {
                     a: self.b,
                     b: self.a,
+                    steps: self.steps,
                 }
             }
         }
@@ -92,6 +97,7 @@ impl Wire {
             lines.push(Line {
                 a: previous,
                 b: next,
+                steps: lines.last().map_or(0, |l| l.steps) + distance,
             });
             previous = next;
         }
@@ -100,17 +106,27 @@ impl Wire {
     }
 }
 
-fn intersection(line1: &Line, line2: &Line) -> Option<Point> {
+fn intersection(line1: &Line, line2: &Line) -> Option<(Point, Line, Line, i32)> {
     if line1.is_horizontal() && line2.is_vertical() {
         if line2.normalized().a.y < line1.a.y
             && line2.normalized().b.y > line1.b.y
             && line1.normalized().a.x < line2.a.x
             && line1.normalized().b.x > line2.b.x
         {
-            return Some(Point {
-                x: line2.a.x,
-                y: line1.a.y,
-            });
+            let l1_steps = line1.steps - (line1.normalized().b.x - line1.normalized().a.x)
+                + (line2.b.x - line1.normalized().a.x);
+            let l2_steps = line2.steps - (line2.normalized().b.y - line2.normalized().a.y)
+                + (line1.b.y - line2.normalized().a.y);
+
+            return Some((
+                Point {
+                    x: line2.a.x,
+                    y: line1.a.y,
+                },
+                line1.clone(),
+                line2.clone(),
+                l1_steps + l2_steps,
+            ));
         }
     }
 
@@ -126,8 +142,12 @@ fn distance(a: Point, b: Point) -> i32 {
 }
 
 fn main() {
-    let wires = fs::read_to_string(INPUT)
-        .unwrap()
+    let input = fs::read_to_string(INPUT).unwrap();
+
+    //let input = "R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51
+    //U98,R91,D20,R16,D67,R40,U7,R15,U6,R7";
+
+    let wires = input
         .lines()
         .map(|l| l.split(",").collect())
         .map(Wire::new)
@@ -136,8 +156,15 @@ fn main() {
     let min = iproduct!(wires[0].lines.iter(), wires[1].lines.iter())
         .map(|(a, b)| intersection(a, b))
         .flatten()
-        .map(|i| distance(Point { x: 0, y: 0 }, i))
+        .map(|i| distance(Point { x: 0, y: 0 }, i.0))
         .min();
 
     println!("{:?}", min.unwrap());
+
+    let min_steps = iproduct!(wires[0].lines.iter(), wires[1].lines.iter())
+        .map(|(a, b)| intersection(a, b))
+        .flatten()
+        .min_by(|a, b| a.3.cmp(&b.3));
+
+    println!("{:?}", min_steps)
 }
