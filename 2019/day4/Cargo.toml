@@ -1,0 +1,4 @@
+[package]
+name = "day4"
+version = "0.0.0"
+authors = ["Mathias Rüdiger <ruediger@blueboot.org>"]
