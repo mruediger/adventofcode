@@ -1,0 +1,7 @@
+[package]
+name = "day6"
+version = "0.0.0"
+authors = ["Mathias Rüdiger <ruediger@blueboot.org>"]
+
+[dependencies]
+itertools = "0.8.2"
