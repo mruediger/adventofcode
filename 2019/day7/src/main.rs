@@ -1,138 +1,26 @@
+extern crate intcode;
 extern crate itertools;
 
 use std::fs;
 
+use intcode::Program;
 use itertools::Itertools;
 
 const INPUT: &str = "../input.txt";
 
-fn parse_opcode(opcode: usize) -> [usize; 4] {
-    let mut result = [0, 0, 0, 0];
+fn run_program(program: &mut Vec<isize>, input: isize, phase_setting: isize) -> isize {
+    let mut program = Program::new(program.to_vec(), vec![input, phase_setting]);
 
-    result[3] = opcode % 100;
-    result[2] = (opcode / 100) % 10;
-    result[1] = (opcode / 1_000) % 10;
-    result[0] = (opcode / 10_000) % 10;
-
-    result
-}
-
-fn read(program: &Vec<isize>, mode: usize, ip: usize) -> isize {
-    if mode == 0 {
-        program[program[ip] as usize]
-    } else {
-        program[ip]
-    }
-}
-
-fn write(program: &mut Vec<isize>, mode: usize, ip: usize, value: isize) {
-    if mode == 0 {
-        let idx = program[ip] as usize;
-        program[idx] = value;
-    } else {
-        program[ip] = value;
-    }
-}
-
-fn run_program(program: &mut Vec<isize>, input: isize, phase_setting: isize) -> (isize, bool) {
-    let mut ip = 0;
-    let mut result = 0;
-    let mut halted = false;
-    let mut read_once = false;
-
-    loop {
-        let x = program[ip];
-        let opcode = parse_opcode(x as usize);
-        match opcode[3] {
-            1 => {
-                let input_a = read(&program, opcode[2], ip + 1);
-                let input_b = read(&program, opcode[1], ip + 2);
-                write(program, opcode[0], ip + 3, input_a + input_b);
-
-                ip += 4;
-            }
-            2 => {
-                let input_a = read(&program, opcode[2], ip + 1);
-                let input_b = read(&program, opcode[1], ip + 2);
-
-                write(program, opcode[0], ip + 3, input_a * input_b);
-                ip += 4;
-            }
-            3 => {
-                if read_once {
-                    write(program, opcode[0], ip + 1, input);
-                } else {
-                    write(program, opcode[0], ip + 1, phase_setting);
-                    read_once = true;
-                }
-                ip += 2;
-            }
-            4 => {
-                result = read(&program, opcode[2], ip + 1);
-                ip += 2;
-            }
-            5 => {
-                let input_a = read(&program, opcode[2], ip + 1);
-                let input_b = read(&program, opcode[1], ip + 2);
-
-                if input_a != 0 {
-                    ip = input_b as usize;
-                } else {
-                    ip += 3;
-                }
-            }
-            6 => {
-                let input_a = read(&program, opcode[2], ip + 1);
-                let input_b = read(&program, opcode[1], ip + 2);
-
-                if input_a == 0 {
-                    ip = input_b as usize;
-                } else {
-                    ip += 3;
-                }
-            }
-            7 => {
-                let input_a = read(&program, opcode[2], ip + 1);
-                let input_b = read(&program, opcode[1], ip + 2);
-
-                if input_a < input_b {
-                    write(program, opcode[0], ip + 3, 1);
-                } else {
-                    write(program, opcode[0], ip + 3, 0);
-                }
-                ip += 4;
-            }
-            8 => {
-                let input_a = read(&program, opcode[2], ip + 1);
-                let input_b = read(&program, opcode[1], ip + 2);
-
-                if input_a == input_b {
-                    write(program, opcode[0], ip + 3, 1);
-                } else {
-                    write(program, opcode[0], ip + 3, 0);
-                }
-                ip += 4;
-            }
-            99 => {
-                halted = true;
-                break;
-            }
-            _ => {
-                println!("unknown opcode {}", program[ip]);
-                break;
-            }
-        }
-    }
-
-    (result, halted)
+    program.run();
+    program.output()[0]
 }
 
 fn run_amplifier(program: &mut Vec<isize>, parameters: Vec<isize>) -> isize {
-    let (output_a, _) = run_program(program, 0, parameters[0]);
-    let (output_b, _) = run_program(program, output_a, parameters[1]);
-    let (output_c, _) = run_program(program, output_b, parameters[2]);
-    let (output_d, _) = run_program(program, output_c, parameters[3]);
-    let (output_e, _) = run_program(program, output_d, parameters[4]);
+    let output_a = run_program(program, 0, parameters[0]);
+    let output_b = run_program(program, output_a, parameters[1]);
+    let output_c = run_program(program, output_b, parameters[2]);
+    let output_d = run_program(program, output_c, parameters[3]);
+    let output_e = run_program(program, output_d, parameters[4]);
 
     return output_e;
 }
