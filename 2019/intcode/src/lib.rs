@@ -1,9 +1,19 @@
+#[derive(Clone)]
 pub struct Program {
     memory: Vec<isize>,
     input: Vec<isize>,
     output: Vec<isize>,
     ip: usize,
     relative_base: isize,
+    pub return_on_output: bool,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub enum ReturnCode {
+    Output,
+    WaitingForInput,
+    Halt,
+    EndOfProgram,
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -68,11 +78,12 @@ fn parse_opcode(opcode: usize) -> (Opcode, ParameterMode, ParameterMode, Paramet
 impl Program {
     pub fn new(memory: Vec<isize>, input: Vec<isize>) -> Program {
         Program {
-            memory: memory,
-            input: input,
+            memory,
+            input,
             output: Vec::new(),
             ip: 0,
             relative_base: 0,
+            return_on_output: false,
         }
     }
 
@@ -84,7 +95,7 @@ impl Program {
         self.ip
     }
 
-    pub fn run(&mut self) -> Vec<isize> {
+    pub fn run(&mut self) -> ReturnCode {
         while self.ip < self.memory.len() {
             use self::Opcode::*;
 
@@ -105,13 +116,20 @@ impl Program {
                 }
 
                 Input => {
-                    let input = self.input.pop().unwrap();
-                    self.write(p0, self.ip + 1, input);
-                    self.ip += 2;
+                    if self.input.len() > 0 {
+                        let input = self.input.pop().unwrap();
+                        self.write(p0, self.ip + 1, input);
+                        self.ip += 2;
+                    } else {
+                        return ReturnCode::WaitingForInput;
+                    }
                 }
                 Output => {
                     self.output.push(self.read(p0, self.ip + 1));
                     self.ip += 2;
+                    if self.return_on_output {
+                        return ReturnCode::Output;
+                    }
                 }
                 JumpIfNe => {
                     let input_a = self.read(p0, self.ip + 1);
@@ -160,19 +178,18 @@ impl Program {
                     self.relative_base += input;
                     self.ip += 2;
                 }
-                Halt => break,
+                Halt => {
+                    self.ip += 1;
+                    return ReturnCode::Halt;
+                }
             }
         }
 
-        self.output.clone()
+        ReturnCode::EndOfProgram
     }
 
     fn read_or_init(&self, idx: usize) -> isize {
-        if idx < self.memory.len() {
-            self.memory[idx]
-        } else {
-            0
-        }
+        *self.memory.get(idx).unwrap_or(&0)
     }
 
     fn read(&self, mode: ParameterMode, ip: usize) -> isize {
@@ -206,6 +223,15 @@ impl Program {
             }
         }
     }
+
+    pub fn run_and_output(&mut self) -> Vec<isize> {
+        self.run();
+        self.output()
+    }
+
+    pub fn input(&mut self, input: isize) {
+        self.input.push(input);
+    }
 }
 
 #[test]
@@ -227,15 +253,15 @@ fn test_opcode() {
 #[test]
 fn test_input_position_mode() {
     let input = vec![3, 12, 6, 12, 15, 1, 13, 14, 13, 4, 13, 99, -1, 0, 1, 9];
-    assert_eq!(Program::new(input.clone(), vec![0]).run()[0], 0);
-    assert_eq!(Program::new(input.clone(), vec![42]).run()[0], 1);
+    assert_eq!(Program::new(input.clone(), vec![0]).run_and_output()[0], 0);
+    assert_eq!(Program::new(input.clone(), vec![42]).run_and_output()[0], 1);
 }
 
 #[test]
 fn test_input_immediate_mode() {
     let input = vec![3, 3, 1105, -1, 9, 1101, 0, 0, 12, 4, 12, 99, 1];
-    assert_eq!(Program::new(input.clone(), vec![0]).run()[0], 0);
-    assert_eq!(Program::new(input.clone(), vec![42]).run()[0], 1);
+    assert_eq!(Program::new(input.clone(), vec![0]).run_and_output()[0], 0);
+    assert_eq!(Program::new(input.clone(), vec![42]).run_and_output()[0], 1);
 }
 
 #[test]
@@ -270,4 +296,23 @@ fn test_day9_example_3() {
     let mut program = Program::new(input.clone(), vec![]);
     program.run();
     assert_eq!(1125899906842624, program.output()[0]);
+}
+
+#[test]
+fn wait_for_input() {
+    let mut program = Program::new(vec![3, 0, 4, 0], vec![]);
+    assert_eq!(program.run(), ReturnCode::WaitingForInput);
+    program.input(123);
+    assert_eq!(program.run(), ReturnCode::EndOfProgram);
+    assert_eq!(program.output(), vec![123]);
+}
+
+#[test]
+fn wait_for_output() {
+    let mut program = Program::new(vec![4, 1, 99], vec![]);
+    program.return_on_output = true;
+    assert_eq!(program.run(), ReturnCode::Output);
+    assert_eq!(program.ip, 2);
+    assert_eq!(program.run(), ReturnCode::Halt);
+    assert_eq!(program.ip, 3);
 }
