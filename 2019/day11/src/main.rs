@@ -1,4 +1,5 @@
 extern crate intcode;
+
 use intcode::{Program, ReturnCode};
 use std::cmp;
 use std::collections::HashMap;
@@ -15,7 +16,7 @@ enum Turn {
     Right,
 }
 
-#[derive(Hash, PartialEq, Eq, Clone, Debug)]
+#[derive(Hash, PartialEq, Eq, Clone)]
 struct Position {
     x: isize,
     y: isize,
@@ -23,7 +24,6 @@ struct Position {
 
 fn parse_step(position: Position, direction: Direction, iturn: isize) -> (Direction, Position) {
     let turn = if iturn == 0 { Turn::Left } else { Turn::Right };
-
     match direction {
         Direction::Up => match turn {
             Turn::Left => (
@@ -92,7 +92,7 @@ fn parse_step(position: Position, direction: Direction, iturn: isize) -> (Direct
     }
 }
 
-fn run(mut program: Program, start_on_white: bool) -> HashMap<Position, isize> {
+fn run(program: &mut Program, start_on_white: bool) -> HashMap<Position, isize> {
     let mut position = Position { x: 0, y: 0 };
     let mut direction = Direction::Up;
     let mut panel: HashMap<Position, isize> = HashMap::new();
@@ -128,62 +128,33 @@ fn run(mut program: Program, start_on_white: bool) -> HashMap<Position, isize> {
     panel
 }
 
-fn render(panel: HashMap<Position, isize>) -> String {
+fn render(panel: &HashMap<Position, isize>) -> String {
     let mut min_x = std::isize::MAX;
     let mut min_y = std::isize::MAX;
     let mut max_x = std::isize::MIN;
     let mut max_y = std::isize::MIN;
 
-    for (position, _) in &panel {
+    for (position, _) in panel {
         min_x = cmp::min(position.x, min_x);
         min_y = cmp::min(position.y, min_y);
         max_x = cmp::max(position.x, max_x);
         max_y = cmp::max(position.y, max_y);
     }
 
-    println!("{}", min_x);
-    println!("{}", min_y);
-    println!("{}", max_x);
-    println!("{}", max_y);
-
     let mut output = String::new();
 
-    for y in min_y..max_y {
-        for x in min_x..max_x {
+    for y in min_y..=max_y {
+        for x in min_x..=max_x {
             match panel.get(&Position { x, y }) {
                 Some(&color) => {
-                    if color == 0 {
-                        output.push('█');
+                    if color == 1 {
+                        output.push('\u{2591}');
                     } else {
-                        output.push(' ');
+                        output.push('\u{2593}');
                     }
                 }
-                None => output.push(' '),
+                None => output.push('\u{2593}'),
             }
-        }
-        output.push('\n');
-    }
-
-    output
-}
-
-fn render_canvas(panel: HashMap<Position, isize>) -> String {
-    let width = 160;
-    let height = 160;
-
-    let mut canvas = vec![0; width * height];
-
-    for (position, color) in &panel {
-        let index = (position.y + height as isize / 2) as usize * width
-            + (position.x + width as isize / 2) as usize;
-        canvas[index] = *color;
-    }
-
-    let mut output = String::new();
-    for y in (0..height) {
-        for x in (0..width) {
-            let color = if canvas[y * x] == 0 { '█' } else { ' ' };
-            output.push(color);
         }
         output.push('\n');
     }
@@ -198,10 +169,10 @@ fn main() {
         .flatten()
         .collect();
 
-    let mut program = Program::new(input.clone(), vec![0]);
+    let mut program = Program::new(input, vec![0]);
     program.return_on_output = true;
 
-    println!("Answer 1: {}", run(program.clone(), false).len());
+    println!("Answer 1: {}", run(&mut program, false).len());
 
-    print!("Answer 2: \n{}", render_canvas(run(program.clone(), true)));
+    print!("Answer 2: \n{}", render(&run(&mut program, true)));
 }
