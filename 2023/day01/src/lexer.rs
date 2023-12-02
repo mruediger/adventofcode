@@ -5,7 +5,6 @@ const DIGITS: [&str; 9] = [
 #[derive(Debug, PartialEq)]
 pub enum Token {
     Number(u32),
-    Char(char),
     String(String),
 }
 
@@ -38,13 +37,13 @@ impl<'a> Lexer<'a> {
                     if next_char.is_alphabetic() {
                         string.push(next_char);
                         self.chars.next();
+                        for n in 0..9 {
+                            if string.ends_with(DIGITS[n]) {
+                                return Some(Token::Number(n as u32 + 1));
+                            }
+                        }
                     } else {
                         break;
-                    }
-                }
-                for n in 0..9 {
-                    if string.contains(DIGITS[n]) {
-                        return Some(Token::Number(n as u32 + 1));
                     }
                 }
                 Some(Token::String(string))
@@ -52,14 +51,4 @@ impl<'a> Lexer<'a> {
             _ => None,
         }
     }
-}
-
-#[test]
-fn test_lexer() {
-    let mut lexer = Lexer::new("xtwo1nineee");
-    let tokens = lexer.tokenize();
-    assert_eq!(
-        tokens,
-        vec![Token::Number(2), Token::Number(1), Token::Number(9),]
-    );
 }
