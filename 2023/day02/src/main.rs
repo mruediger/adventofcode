@@ -1,4 +1,4 @@
-use regex::Regex;
+use {once_cell::sync::Lazy, regex::Regex};
 
 #[derive(Default, Debug)]
 struct Draw {
@@ -9,17 +9,12 @@ struct Draw {
 
 impl Draw {
     pub fn new(string: &str) -> Self {
-        //        let re_red = Regex::new(r".*([0-9]+) red.*").unwrap();
-        //        let re_green = Regex::new(r".*([0-9]+) green.*").unwrap();
-        //        let re_blue = Regex::new(r".*([0-9]+) blue.*").unwrap();
-        //
-        //        re_red.captures(string).)
-        let re = Regex::new(r" *([0-9]+) (\w*) *").unwrap();
+        static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r" *([0-9]+) (\w*) *").unwrap());
 
         let mut draw = Draw::default();
 
         for part in string.split(',') {
-            let Some(caps) = re.captures(part) else {
+            let Some(caps) = RE.captures(part) else {
                 continue;
             };
 
@@ -52,9 +47,9 @@ struct Game {
 
 impl Game {
     pub fn new(line: &str) -> Self {
-        let re = Regex::new(r"Game ([0-9]+): (.+)$").unwrap();
+        static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"Game ([0-9]+): (.+)$").unwrap());
 
-        let Some(caps) = re.captures(line) else {
+        let Some(caps) = RE.captures(line) else {
             return Game::default();
         };
 
