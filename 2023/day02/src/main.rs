@@ -98,22 +98,24 @@ fn main() {
         .map(String::from)
         .collect();
 
-    let mut sum = 0;
-    let mut power_sum = 0;
+    let sum: u32 = input
+        .iter()
+        .map(|s| Game::new(s))
+        .filter(|g| {
+            g.is_game_possible(Draw {
+                red: 12,
+                green: 13,
+                blue: 14,
+            })
+        })
+        .map(|g| g.id)
+        .sum();
 
-    for line in input {
-        let game = Game::new(&line);
-        //12 red cubes, 13 green cubes, and 14 blue
-        if game.is_game_possible(Draw {
-            red: 12,
-            green: 13,
-            blue: 14,
-        }) {
-            sum += game.id;
-        }
-
-        power_sum += game.minimal_draw().power();
-    }
+    let power_sum: u32 = input
+        .iter()
+        .map(|s| Game::new(s))
+        .map(|g| g.minimal_draw().power())
+        .sum();
 
     println!("{}", sum);
     println!("{}", power_sum);
