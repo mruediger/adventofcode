@@ -1,7 +1,4 @@
-mod lexer;
-
-use crate::lexer::Lexer;
-use crate::lexer::Token;
+mod part2;
 
 const INPUT: &str = "../input.txt";
 
@@ -46,45 +43,6 @@ fn part1(input: &Vec<String>) -> u32 {
         .sum::<u32>()
 }
 
-fn part2(input: &Vec<String>) -> u32 {
-    let mut sum = 0;
-    for line in input {
-        let mut lexer = Lexer::new(line);
-        let tokens = lexer.tokenize();
-
-        let mut first: u32 = 0;
-        let mut last: u32 = 0;
-
-        for token in tokens.iter() {
-            match token {
-                Token::Number(x) => {
-                    first = *x;
-                    break;
-                }
-                _ => continue,
-            }
-        }
-
-        for token in tokens.iter().rev() {
-            match token {
-                Token::Number(x) => {
-                    last = *x;
-                    break;
-                }
-                _ => continue,
-            }
-        }
-
-        println!("{}", line);
-        println!("{:?}", tokens);
-        println!("{}", first * 10 + last);
-
-        sum += first * 10 + last;
-    }
-
-    sum
-}
-
 fn main() {
     let input: Vec<String> = std::fs::read_to_string(INPUT)
         .unwrap()
@@ -93,33 +51,13 @@ fn main() {
         .collect();
 
     println!("{}", part1(&input));
-    println!("{}", part2(&input));
+    println!("{}", part2::run(&input));
 }
 
 #[test]
-fn test_lexer() {
-    let mut lexer = Lexer::new("xtwo1nineee");
-    let tokens = lexer.tokenize();
+fn test_part2() {
     assert_eq!(
-        tokens,
-        vec![Token::Number(2), Token::Number(1), Token::Number(9),]
-    );
-}
-
-#[test]
-fn test_lexer_complicated() {
-    let mut lexer = Lexer::new("ninezfzseveneight5kjrjvtfjqt5nineone");
-    assert_eq!(
-        lexer.tokenize(),
-        vec![
-            Token::Number(9),
-            Token::String("fz".to_string()),
-            Token::Number(7),
-            Token::Number(8),
-            Token::Number(5),
-            Token::String("kjrjvtfjqt".to_string()),
-            Token::Number(5),
-            Token::Number(1)
-        ]
+        part2::number(&"ninezfzseveneight5kjrjvtfjqt5nineone".to_string()),
+        Some(91)
     )
 }
