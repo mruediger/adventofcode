@@ -1,52 +1,35 @@
-use {once_cell::sync::Lazy, regex::Regex};
+use std::collections::HashSet;
 
 #[derive(Default, Debug, Clone)]
-struct Card {
-    number: usize,
-    scratch: Vec<u32>,
-    winning: Vec<u32>,
+struct Card<'a> {
+    scratch: HashSet<&'a str>,
+    winning: HashSet<&'a str>,
 }
 
-impl Card {
-    fn new(line: &str) -> Self {
-        static RE: Lazy<Regex> =
-            Lazy::new(|| Regex::new(r"^Card *([0-9]+): +(.+) \| +(.+)$").unwrap());
-
-        let Some(caps) = RE.captures(line) else {
-            println!("error {}", line);
-            return Card::default();
-        };
-
-        let (_, [number, wn_string, on_string]) = caps.extract();
-        let parse = |s: &str| s.split_whitespace().map(|x| x.parse().unwrap()).collect();
+impl<'a> Card<'a> {
+    fn new(line: &'a str) -> Self {
+        let (_, line) = line.split_once(": ").unwrap();
+        let (wn_string, on_string) = line.split_once('|').unwrap();
         Card {
-            number: number.parse().unwrap(),
-            winning: parse(wn_string),
-            scratch: parse(on_string),
+            winning: wn_string.split_whitespace().collect(),
+            scratch: on_string.split_whitespace().collect(),
         }
     }
 
     fn count_wins(&self) -> usize {
-        self.scratch
-            .iter()
-            .filter(|n| self.winning.contains(n))
-            .count()
+        self.scratch.intersection(&self.winning).count()
     }
 }
 
 fn count_cards(cards: Vec<Card>) -> u32 {
-    let mut queue = cards.clone();
-    let mut count = 0;
+    let mut cards_count = vec![1; cards.len()];
 
-    while let Some(card) = queue.pop() {
-        let wins = card.count_wins();
-        count += 1;
-        cards[card.number..(card.number + wins)]
-            .iter()
-            .for_each(|c| queue.push(c.clone()));
+    for (i, card) in cards.iter().enumerate() {
+        for x in (i + 1)..=(i + card.count_wins()) {
+            cards_count[x] += cards_count[i];
+        }
     }
-
-    count
+    cards_count.iter().sum()
 }
 
 pub fn run(input: &Vec<String>) -> u32 {
