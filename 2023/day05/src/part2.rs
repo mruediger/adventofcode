@@ -1,3 +1,5 @@
+use rayon::prelude::*;
+
 #[derive(Debug)]
 struct Almanac {
     seeds: Vec<u32>,
@@ -128,11 +130,15 @@ impl Almanac {
 pub fn run(input: &str) -> u32 {
     let almanac = Almanac::new(input);
 
-    almanac
+    let ranges: Vec<_> = almanac
         .seeds
         .chunks(2)
         .flat_map(|chunk| chunk[0]..chunk[0] + chunk[1])
-        .map(|s| almanac.get_location(s))
+        .collect();
+
+    ranges
+        .par_iter()
+        .map(|s| almanac.get_location(*s))
         .min()
         .unwrap()
 }
