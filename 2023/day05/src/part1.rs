@@ -1,20 +1,56 @@
-use std::collections::HashMap;
-
 #[derive(Debug)]
 struct Almanac {
-    seeds: Vec<usize>,
-    seed_to_soil_map: HashMap<usize, usize>,
-    soil_to_fertilizer_map: HashMap<usize, usize>,
-    fertilizer_to_water_map: HashMap<usize, usize>,
-    water_to_light_map: HashMap<usize, usize>,
-    light_to_temperature_map: HashMap<usize, usize>,
-    temperature_to_humidity_map: HashMap<usize, usize>,
-    humidity_to_location_map: HashMap<usize, usize>,
+    seeds: Vec<i64>,
+    seed_to_soil_map: Map,
+    soil_to_fertilizer_map: Map,
+    fertilizer_to_water_map: Map,
+    water_to_light_map: Map,
+    light_to_temperature_map: Map,
+    temperature_to_humidity_map: Map,
+    humidity_to_location_map: Map,
+}
+
+#[derive(Debug)]
+struct Conversion {
+    d_start: i64,
+    s_start: i64,
+    length: i64,
+}
+
+impl Conversion {
+    fn convert(&self, source: i64) -> Option<i64> {
+        let min = self.s_start;
+        let max = self.s_start + self.length;
+        let offset: i64 = self.d_start - self.s_start;
+        match source {
+            x if x < min => None,
+            x if x >= max => None,
+            _ => Some(source + offset),
+        }
+    }
+}
+
+#[derive(Default, Debug)]
+struct Map {
+    conversions: Vec<Conversion>,
+}
+
+impl Map {
+    fn get(&self, source: i64) -> i64 {
+        self.get_destination(source)
+    }
+
+    fn get_destination(&self, source: i64) -> i64 {
+        self.conversions
+            .iter()
+            .find_map(|c| c.convert(source))
+            .unwrap_or(source)
+    }
 }
 
 impl Almanac {
     fn new(input: &str) -> Self {
-        let seeds: Vec<usize> = input
+        let seeds = input
             .lines()
             .find(|s| !s.is_empty())
             .unwrap()
@@ -25,13 +61,13 @@ impl Almanac {
             .flat_map(|s| s.parse())
             .collect();
 
-        let mut seed_to_soil_map: HashMap<usize, usize> = HashMap::new();
-        let mut soil_to_fertilizer_map: HashMap<usize, usize> = HashMap::new();
-        let mut fertilizer_to_water_map: HashMap<usize, usize> = HashMap::new();
-        let mut water_to_light_map: HashMap<usize, usize> = HashMap::new();
-        let mut light_to_temperature_map: HashMap<usize, usize> = HashMap::new();
-        let mut temperature_to_humidity_map: HashMap<usize, usize> = HashMap::new();
-        let mut humidity_to_location_map: HashMap<usize, usize> = HashMap::new();
+        let mut seed_to_soil_map = Map::default();
+        let mut soil_to_fertilizer_map = Map::default();
+        let mut fertilizer_to_water_map = Map::default();
+        let mut water_to_light_map = Map::default();
+        let mut light_to_temperature_map = Map::default();
+        let mut temperature_to_humidity_map = Map::default();
+        let mut humidity_to_location_map = Map::default();
         let mut map = &mut seed_to_soil_map;
 
         let parse = |s: &str| {
@@ -39,7 +75,7 @@ impl Almanac {
                 .to_string()
                 .split_whitespace()
                 .map(|s| s.parse().unwrap())
-                .collect::<Vec<usize>>();
+                .collect::<Vec<i64>>();
             match &vec[..] {
                 &[a, b, c] => (a, b, c),
                 _ => (0, 0, 0),
@@ -57,9 +93,11 @@ impl Almanac {
                 "humidity-to-location map:" => map = &mut humidity_to_location_map,
                 _ => {
                     let (d_start, s_start, length) = parse(line);
-                    for i in 0..length {
-                        map.insert(s_start + i, d_start + i);
-                    }
+                    map.conversions.push(Conversion {
+                        d_start,
+                        s_start,
+                        length,
+                    });
                 }
             };
         }
@@ -76,41 +114,30 @@ impl Almanac {
         }
     }
 
-    fn get_location<'a>(&'a self, seed: &'a usize) -> &usize {
-        let get_default = |map: HashMap<usize, usize>, i: &usize| {
-            let binding = map.get(i).clone();
-            *binding.unwrap_or(i)
-        };
-
-        let soil: &usize = self.seed_to_soil_map.get(seed).unwrap_or(seed);
-        let fertilizer = self.soil_to_fertilizer_map.get(soil).unwrap_or(soil);
-        let water = self
-            .fertilizer_to_water_map
-            .get(fertilizer)
-            .unwrap_or(fertilizer);
-        let light = self.water_to_light_map.get(water).unwrap_or(water);
-        let temperature = self.light_to_temperature_map.get(light).unwrap_or(light);
-        let humidity = self
-            .temperature_to_humidity_map
-            .get(temperature)
-            .unwrap_or(temperature);
-        self.humidity_to_location_map
-            .get(humidity)
-            .unwrap_or(humidity)
+    fn get_location(&self, seed: i64) -> i64 {
+        let soil = self.seed_to_soil_map.get(seed);
+        let fertilizer = self.soil_to_fertilizer_map.get(soil);
+        let water = self.fertilizer_to_water_map.get(fertilizer);
+        let light = self.water_to_light_map.get(water);
+        let temperature = self.light_to_temperature_map.get(light);
+        let humidity = self.temperature_to_humidity_map.get(temperature);
+        self.humidity_to_location_map.get(humidity)
     }
 }
 
-pub fn run(input: &str) {
+pub fn run(input: &str) -> i64 {
     let almanac = Almanac::new(input);
 
     println!("parsing done");
 
-    let seeds = almanac
+    let mut seeds = almanac
         .seeds
         .iter()
-        .map(|s| almanac.get_location(s))
+        .map(|s| almanac.get_location(*s))
         .collect::<Vec<_>>();
-    println!("{:?}", seeds);
+
+    seeds.sort();
+    seeds[0]
 }
 
 #[test]
@@ -151,8 +178,28 @@ humidity-to-location map:
 56 93 4
 ";
     let almanac = Almanac::new(input);
-    assert_eq!(almanac.seed_to_soil_map[79], 81);
-    assert_eq!(almanac.seed_to_soil_map[14], 14);
-    assert_eq!(almanac.seed_to_soil_map[55], 57);
-    assert_eq!(almanac.seed_to_soil_map[13], 13);
+    assert_eq!(almanac.seed_to_soil_map.get(79), 81);
+    assert_eq!(almanac.seed_to_soil_map.get(14), 14);
+    assert_eq!(almanac.seed_to_soil_map.get(55), 57);
+    assert_eq!(almanac.seed_to_soil_map.get(13), 13);
+}
+
+#[test]
+fn test_map() {
+    let mut seed_to_soil_map = Map::default();
+    seed_to_soil_map.conversions.push(Conversion {
+        d_start: 50,
+        s_start: 98,
+        length: 2,
+    });
+    seed_to_soil_map.conversions.push(Conversion {
+        d_start: 52,
+        s_start: 50,
+        length: 48,
+    });
+
+    assert_eq!(seed_to_soil_map.get_destination(79), 81);
+    assert_eq!(seed_to_soil_map.get_destination(14), 14);
+    assert_eq!(seed_to_soil_map.get_destination(55), 57);
+    assert_eq!(seed_to_soil_map.get_destination(13), 13);
 }
