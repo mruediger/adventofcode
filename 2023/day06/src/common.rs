@@ -1,0 +1,28 @@
+use std::cmp;
+
+pub fn get_options(time: u64, distance: u64) -> u64 {
+    let mut min = u64::MAX;
+    let mut max = 0;
+
+    for i in 0..time {
+        if (time - i) * i > distance {
+            min = cmp::min(min, i);
+            max = cmp::max(max, i);
+        }
+    }
+
+    max - min + 1
+}
+
+#[test]
+fn test_get_options() {
+    assert_eq!(get_options(7, 9), [2, 3, 4, 5].len() as u64);
+    assert_eq!(
+        get_options(15, 40),
+        (4..=11).collect::<Vec<_>>().len() as u64
+    );
+    assert_eq!(
+        get_options(30, 200),
+        (11..=19).collect::<Vec<_>>().len() as u64
+    );
+}
