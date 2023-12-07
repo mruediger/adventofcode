@@ -1,17 +1,12 @@
-use std::cmp;
-
 pub fn get_options(time: u64, distance: u64) -> u64 {
-    let mut min = u64::MAX;
-    let mut max = 0;
-
+    let mut count = 0;
     for i in 0..time {
         if (time - i) * i > distance {
-            min = cmp::min(min, i);
-            max = cmp::max(max, i);
+            count += 1;
         }
     }
 
-    max - min + 1
+    count
 }
 
 #[test]
