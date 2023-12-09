@@ -26,24 +26,18 @@ pub fn count_steps(
     is_end: fn(&str) -> bool,
     nodes: &HashMap<&str, (&str, &str)>,
 ) -> usize {
-    let instructions: Vec<char> = instructions.chars().collect();
-    let mut end_found = false;
-    let mut i = 0;
     let mut next = start;
-
-    while !end_found {
-        next = match instructions[i % instructions.len()] {
+    for (i, inst) in instructions.chars().cycle().enumerate() {
+        next = match inst {
             'L' => nodes[next].0,
             'R' => nodes[next].1,
-            _ => panic!(
-                "unknown instruction found {:?}",
-                instructions[i % instructions.len()]
-            ),
+            _ => panic!("unknown instruction found {:?}", inst),
         };
-        end_found = is_end(next);
-        i += 1;
+        if is_end(next) {
+            return i + 1;
+        }
     }
-    i
+    0
 }
 
 #[cfg(test)]
