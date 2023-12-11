@@ -55,6 +55,18 @@ impl Sketch {
         }
         points
     }
+
+    pub fn len(&self) -> usize {
+        self.chars.len()
+    }
+
+    pub fn width(&self) -> usize {
+        if !self.chars.is_empty() {
+            self.chars[0].len()
+        } else {
+            0
+        }
+    }
 }
 
 pub fn parse(input: &str) -> Option<Sketch> {
