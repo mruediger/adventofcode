@@ -1,5 +1,4 @@
 mod common;
-mod part1;
 
 fn main() {
     let input = std::fs::read_to_string("../input.txt").unwrap();
@@ -7,7 +6,7 @@ fn main() {
     println!("Part 2: {}", part2(&input));
 }
 
-fn part1(input: &str) -> u32 {
+fn part1(input: &str) -> usize {
     let mut galaxy = crate::common::parse(input);
     galaxy.expand(1);
     galaxy
@@ -17,9 +16,9 @@ fn part1(input: &str) -> u32 {
         .sum()
 }
 
-fn part2(input: &str) -> u32 {
+fn part2(input: &str) -> usize {
     let mut galaxy = crate::common::parse(input);
-    galaxy.expand(1000000);
+    galaxy.expand(1000000 - 1); // don't ask me why - 1
     galaxy
         .pairs()
         .iter()
