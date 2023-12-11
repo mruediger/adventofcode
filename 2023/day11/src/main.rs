@@ -8,7 +8,7 @@ fn main() {
 
 fn part1(input: &str) -> usize {
     let mut galaxy = crate::common::parse(input);
-    galaxy.expand(1);
+    galaxy.expand(2);
     galaxy
         .pairs()
         .iter()
@@ -18,7 +18,7 @@ fn part1(input: &str) -> usize {
 
 fn part2(input: &str) -> usize {
     let mut galaxy = crate::common::parse(input);
-    galaxy.expand(1000000 - 1); // don't ask me why - 1
+    galaxy.expand(1000000);
     galaxy
         .pairs()
         .iter()

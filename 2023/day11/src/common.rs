@@ -83,7 +83,8 @@ pub struct Universe {
 }
 
 impl Universe {
-    pub fn expand(&mut self, times: usize) {
+    pub fn expand(&mut self, expansion: usize) {
+        let expansion = expansion - 1;
         let (height, width) = (
             &self.galaxies.iter().max_by_key(|(x, _)| x).unwrap().0 + 1,
             &self.galaxies.iter().max_by_key(|(_, y)| y).unwrap().1 + 1,
@@ -99,16 +100,16 @@ impl Universe {
 
         for (i, (x, _)) in rows.iter().enumerate().filter(|(_, &row)| !row).enumerate() {
             for galaxy in &mut self.galaxies {
-                if galaxy.0 > x + (i * times) {
-                    galaxy.0 += times;
+                if galaxy.0 > x + (i * expansion) {
+                    galaxy.0 += expansion;
                 }
             }
         }
 
         for (i, (y, _)) in cols.iter().enumerate().filter(|(_, &col)| !col).enumerate() {
             for galaxy in &mut self.galaxies {
-                if galaxy.1 > y + (i * times) {
-                    galaxy.1 += times;
+                if galaxy.1 > y + (i * expansion) {
+                    galaxy.1 += expansion;
                 }
             }
         }
@@ -184,33 +185,11 @@ mod tests {
                                           .........#...
                                           #....#......."};
 
-    const EXPANDED_INPUT2: &str = indoc! {".....#..........
-                                           ...........#....
-                                           #...............
-                                           ................
-                                           ................
-                                           ................
-                                           ..........#.....
-                                           .#..............
-                                           ...............#
-                                           ................
-                                           ................
-                                           ................
-                                           ...........#....
-                                           #.....#........."};
-
     #[test]
     fn expand() {
         let mut galaxy = super::parse(INPUT);
-        galaxy.expand(1);
-        assert_eq!(galaxy, super::parse(EXPANDED_INPUT));
-    }
-
-    #[test]
-    fn expand2() {
-        let mut galaxy = super::parse(INPUT);
         galaxy.expand(2);
-        assert_eq!(galaxy, super::parse(EXPANDED_INPUT2));
+        assert_eq!(galaxy, super::parse(EXPANDED_INPUT));
     }
 
     #[test]
@@ -245,7 +224,7 @@ mod tests {
     #[test]
     fn all_distances_10() {
         let mut galaxy = super::parse(INPUT);
-        galaxy.expand(9);
+        galaxy.expand(10);
         let sum: usize = galaxy
             .pairs()
             .iter()
@@ -257,7 +236,7 @@ mod tests {
     #[test]
     fn all_distances_100() {
         let mut galaxy = super::parse(INPUT);
-        galaxy.expand(99);
+        galaxy.expand(100);
         let sum: usize = galaxy
             .pairs()
             .iter()
