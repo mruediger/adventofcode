@@ -58,7 +58,7 @@ impl Pattern {
     }
 
     fn fold(&self) -> usize {
-        self.collumn_fold() + self.row_fold() * 100
+        cmp::max(self.collumn_fold(), self.row_fold() * 100)
     }
 
     fn collumn_fold(&self) -> usize {
@@ -66,7 +66,7 @@ impl Pattern {
         let mut fold = 0;
         for start in find_fold_start(&collumns) {
             if let Some(tmp) = check_fold(start, &collumns) {
-                if tmp > start {
+                if tmp > fold {
                     fold = tmp;
                 }
             }
@@ -80,7 +80,7 @@ impl Pattern {
         let mut fold = 0;
         for start in find_fold_start(&rows) {
             if let Some(tmp) = check_fold(start, &rows) {
-                if tmp > start {
+                if tmp > fold {
                     fold = tmp;
                 }
             }
@@ -95,24 +95,30 @@ impl Pattern {
 
     fn collumn_fold_smudged(&self) -> usize {
         let collumns = self.collumns();
-        for start in find_fold_start(&collumns) {
-            if let Some(fold) = check_fold_smudged(start, &collumns) {
-                return fold;
+        let mut fold = 0;
+        for start in find_fold_start_smudged(&collumns) {
+            if let Some(tmp) = check_fold_smudged(start, &collumns) {
+                if tmp > fold {
+                    fold = tmp;
+                }
             }
         }
 
-        0
+        fold
     }
 
     fn row_fold_smudged(&self) -> usize {
         let rows = self.rows();
+        let mut fold = 0;
         for start in find_fold_start_smudged(&rows) {
-            if let Some(fold) = check_fold_smudged(start, &rows) {
-                return fold;
+            if let Some(tmp) = check_fold_smudged(start, &rows) {
+                if tmp > fold {
+                    fold = tmp;
+                }
             }
         }
 
-        0
+        fold
     }
 }
 
@@ -140,8 +146,6 @@ fn check_fold(start: usize, patterns: &Vec<Vec<char>>) -> Option<usize> {
     let mut i = 0;
     while start as i32 - i as i32 >= 0 && start + i + 1 < patterns.len() {
         if patterns[start - i] != patterns[start + i + 1] {
-            //        println!("{:?}", patterns[start - i]);
-            //       println!("{:?}", patterns[start + i + 1]);
             return None;
         }
         i += 1;
@@ -162,7 +166,11 @@ fn check_fold_smudged(start: usize, patterns: &Vec<Vec<char>>) -> Option<usize> 
         i += 1;
     }
 
-    Some(start + 1)
+    if differences == 1 {
+        Some(start + 1)
+    } else {
+        None
+    }
 }
 
 fn parse(input: &str) -> Vec<Pattern> {
