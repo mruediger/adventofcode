@@ -34,19 +34,15 @@ fn part2() {
         total += movable.len();
 
         for (x,y) in &movable {
-            input.set(*x,*y,'x')
-        }
-
-        for (x,y) in &movable {
             input.set(*x,*y,'.')
         }
 
         movable = input.iter_positions()
-        .filter(|(x,y)| input.get(*x,*y) == '@')
-        .filter(|(x,y)| {
-            input.get_adjacent_values(*x,*y).iter().filter(|c| **c == '@').count() < 4
-        })
-        .collect();
+            .filter(|(x,y)| input.get(*x,*y) == '@')
+            .filter(|(x,y)| {
+                input.get_adjacent_values(*x,*y).iter().filter(|c| **c == '@').count() < 4
+            })
+            .collect();
     }
 
     println!("part 2: {}", total);
