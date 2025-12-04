@@ -1,4 +1,4 @@
-use std::cmp;
+use std::{cmp, collections::BinaryHeap};
 use itertools::Itertools;
 
 fn main() {
@@ -33,8 +33,8 @@ fn calculate_joltage(bank:&str) -> u32 {
     let batteries:Vec<u32> = bank.chars().map(|s| s.to_digit(10).expect("a number")).collect();
     let mut max = 0;
 
-    for x in (0..batteries.len()) {
-        for y in (x+1..batteries.len()) {
+    for x in 0..batteries.len() {
+        for y in x+1..batteries.len() {
             max = cmp::max(max, batteries[x]*10 + batteries[y]);
         }
     }
@@ -42,7 +42,7 @@ fn calculate_joltage(bank:&str) -> u32 {
     max
 }
 
-fn calculate_joltage_dozen(bank:&str) -> u64 {
+fn calculate_joltage_dozen_old(bank:&str) -> u64 {
     bank.chars()
         .map(|s| s.to_digit(10).expect("a number"))
         .map(u64::from)
@@ -50,6 +50,35 @@ fn calculate_joltage_dozen(bank:&str) -> u64 {
         .map(|c| c.iter().fold(0, |acc, i| acc * 10 + i))
         .max().expect("reason")
 }
+
+fn calculate_joltage_dozen(bank:&str) -> u64 {
+    let mut batteries:Vec<(usize,u32)> = bank.chars()
+        .map(|s| s.to_digit(10).expect("a number"))
+        .enumerate()
+        .collect();
+
+    batteries.sort_by(|a, b| {
+        let second_cmp = b.1.cmp(&a.1);
+
+        if second_cmp == std::cmp::Ordering::Equal {
+            b.0.cmp(&a.0)
+        } else {
+            second_cmp
+        }
+    });
+    println!("{:?}", batteries);
+
+    let mut biggest_dozen:Vec<(usize,u32)> = batteries.into_iter().take(12).collect();
+    println!("{:?}", biggest_dozen);
+    biggest_dozen.sort_by(|a, b| a.0.cmp(&b.0));
+
+    println!("{:?}", biggest_dozen);
+
+    biggest_dozen.into_iter()
+        .map(|(_,v)| u64::from(v))
+        .fold(0, |acc, i| acc * 10 + i)
+}
+
 
 #[test]
 fn test_part1() {
